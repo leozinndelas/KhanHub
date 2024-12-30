@@ -3,6 +3,7 @@ local ScreenGui = Instance.new("ScreenGui")
 local Frame = Instance.new("Frame")
 local AutoFarmButton = Instance.new("TextButton")
 local FruitCollectorButton = Instance.new("TextButton")
+local Signature = Instance.new("TextLabel")
 
 ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
 ScreenGui.Name = "ScriptUI"
@@ -27,12 +28,22 @@ FruitCollectorButton.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
 FruitCollectorButton.TextColor3 = Color3.new(1, 1, 1)
 FruitCollectorButton.Text = "Toggle Fruit Collector"
 
+Signature.Parent = Frame
+Signature.Size = UDim2.new(0, 180, 0, 20)
+Signature.Position = UDim2.new(0, 10, 0, 110)
+Signature.BackgroundTransparency = 1
+Signature.TextColor3 = Color3.new(1, 1, 1)
+Signature.Text = "KhanHub-by leozin"
+Signature.TextScaled = true
+
 -- Configuração das Funções
 local autoFarmActive = false
 local fruitCollectorActive = false
 
 local function toggleAutoFarm()
     autoFarmActive = not autoFarmActive
+    AutoFarmButton.BackgroundColor3 = autoFarmActive and Color3.new(0, 1, 0) or Color3.new(1, 0, 0)
+    AutoFarmButton.Text = autoFarmActive and "Auto-Farm: ON" or "Auto-Farm: OFF"
     if autoFarmActive then
         print("Auto-Farm ativado")
         spawn(autoFarm)
@@ -43,6 +54,8 @@ end
 
 local function toggleFruitCollector()
     fruitCollectorActive = not fruitCollectorActive
+    FruitCollectorButton.BackgroundColor3 = fruitCollectorActive and Color3.new(0, 1, 0) or Color3.new(1, 0, 0)
+    FruitCollectorButton.Text = fruitCollectorActive and "Fruit Collector: ON" or "Fruit Collector: OFF"
     if fruitCollectorActive then
         print("Fruit Collector ativado")
         spawn(fruitCollector)
@@ -61,12 +74,12 @@ local function autoFarm()
         local player = game.Players.LocalPlayer
         local playerLevel = player.Data.Level.Value -- Verifica o nível do jogador
         local questGiver, questLocation, mobLocation = getQuestAndMobForLevel(playerLevel)
-        
+
         -- Pega a Quest
         teleportTo(questLocation)
         wait(2)
         fireclickdetector(questGiver:FindFirstChild("ClickDetector"))
-        
+
         -- Ataca os mobs do nível
         teleportTo(mobLocation)
         wait(2)
@@ -101,10 +114,8 @@ end
 local function detectFruits()
     local fruits = {}
     for _, item in pairs(game.Workspace:GetChildren()) do
-        if item:IsA("Tool") and item:FindFirstChild("Handle") then
-            if item.Name:lower():find("fruit") then
-                table.insert(fruits, item)
-            end
+        if item:IsA("Tool") and item:FindFirstChild("Handle") and item.Name:lower():find("fruit") then
+            table.insert(fruits, item)
         end
     end
     return fruits
@@ -112,9 +123,11 @@ end
 
 local function collectFruit(fruit)
     if fruit and fruit:FindFirstChild("Handle") then
-        teleportTo(fruit.Handle.Position)
-        wait(1)
-        fireclickdetector(fruit.Handle:FindFirstChild("ClickDetector"))
+        pcall(function()
+            teleportTo(fruit.Handle.Position)
+            wait(math.random(1, 2)) -- Simula um atraso realista
+            fireclickdetector(fruit.Handle:FindFirstChild("ClickDetector"))
+        end)
     end
 end
 
@@ -149,11 +162,4 @@ local function attackMob(mob)
         -- Simula o ataque (modifique conforme necessário para a lógica de ataque)
         fireclickdetector(mob:FindFirstChild("ClickDetector"))
     end
-end
-
-if config.autoFarmEnabled then
-    spawn(autoFarm)
-end
-if config.fruitCollectionEnabled then
-    spawn(fruitCollector)
 end
