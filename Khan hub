@@ -1,4 +1,4 @@
--- Criação da Interface Gráfica
+-- Interface Gráfica
 local ScreenGui = Instance.new("ScreenGui")
 local Frame = Instance.new("Frame")
 local AutoFarmButton = Instance.new("TextButton")
@@ -19,22 +19,22 @@ AutoFarmButton.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
 AutoFarmButton.TextColor3 = Color3.new(1, 1, 1)
 AutoFarmButton.Text = "Toggle Auto-Farm"
 
--- Configuração das Funções
+-- Variáveis e Funções Globais
 local autoFarmActive = false
 
 local function toggleAutoFarm()
     autoFarmActive = not autoFarmActive
     if autoFarmActive then
-        print("Auto-Farm ativado")
+        print("Auto-Farm ativado.")
         spawn(autoFarm)
     else
-        print("Auto-Farm desativado")
+        print("Auto-Farm desativado.")
     end
 end
 
 AutoFarmButton.MouseButton1Click:Connect(toggleAutoFarm)
 
--- Função Principal de Auto-Farm
+-- Função de Auto-Farm
 local function autoFarm()
     while autoFarmActive do
         local player = game.Players.LocalPlayer
@@ -50,6 +50,7 @@ local function autoFarm()
             break
         end
 
+        -- Obtém o nível do jogador
         local playerLevel = player:FindFirstChild("Data") and player.Data:FindFirstChild("Level") and player.Data.Level.Value
         if not playerLevel then
             warn("Nível do jogador não encontrado.")
@@ -58,28 +59,24 @@ local function autoFarm()
 
         print("Nível do jogador:", playerLevel)
 
-        -- Identifica o NPC de Quest e Mobs
+        -- Localiza o NPC de missão e os mobs correspondentes
         local questGiver, questLocation, mobLocation = getQuestAndMobForLevel(playerLevel)
         if not questGiver or not questLocation or not mobLocation then
-            warn("Nenhuma missão disponível para o nível atual.")
+            warn("Nenhuma missão ou mob disponível para o nível atual.")
             break
         end
 
-        print("Encontrado NPC da missão:", questGiver.Name)
-
-        -- Aceita a Quest
+        -- Aceita a missão
         teleportTo(questLocation)
         wait(1)
-        local clickDetector = questGiver:FindFirstChild("ClickDetector")
-        if clickDetector then
-            fireclickdetector(clickDetector)
+        if questGiver:FindFirstChild("ClickDetector") then
+            fireclickdetector(questGiver.ClickDetector)
             print("Missão aceita.")
         else
-            warn("Falha ao pegar a missão.")
-            break
+            warn("ClickDetector não encontrado no NPC.")
         end
 
-        -- Ataca os Mobs
+        -- Ataca os mobs
         teleportTo(mobLocation)
         wait(1)
         local mobs = getMobsNearby(mobLocation)
@@ -93,25 +90,25 @@ local function autoFarm()
                 end
             end
         else
-            warn("Nenhum mob disponível.")
+            warn("Nenhum mob encontrado.")
         end
 
-        wait(5) -- Pausa antes de repetir
+        wait(5)
     end
 end
 
 -- Funções Auxiliares
-local function teleportTo(position)
+local function teleportTo(location)
     local character = game.Players.LocalPlayer.Character
     if character and character:FindFirstChild("HumanoidRootPart") then
-        character.HumanoidRootPart.CFrame = CFrame.new(position)
+        character.HumanoidRootPart.CFrame = CFrame.new(location)
     else
-        warn("Não foi possível teleportar. HumanoidRootPart ausente.")
+        warn("Não foi possível teleportar.")
     end
 end
 
 local function getQuestAndMobForLevel(level)
-    -- Configuração do sistema de nível e localização
+    -- Retorna as posições com base no nível
     if level < 50 then
         return game.Workspace:FindFirstChild("QuestGiver1"), Vector3.new(100, 10, 200), Vector3.new(120, 10, 220)
     elseif level < 100 then
@@ -131,7 +128,6 @@ local function getMobsNearby(location)
             end
         end
     end
-    print("Mobs detectados:", #mobs)
     return mobs
 end
 
@@ -140,9 +136,9 @@ local function attackMob(mob)
     if character and character:FindFirstChild("HumanoidRootPart") and mob:FindFirstChild("HumanoidRootPart") then
         character.HumanoidRootPart.CFrame = mob.HumanoidRootPart.CFrame + Vector3.new(0, 5, 0)
         wait(0.1)
-        print("Atacando:", mob.Name)
-        -- Modifique esta função conforme a mecânica do jogo
+        print("Atacando mob:", mob.Name)
+        -- Simulação de ataque
     else
-        warn("Não foi possível atacar o mob. Verifique os parâmetros.")
+        warn("Não foi possível atacar.")
     end
 end
