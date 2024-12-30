@@ -13,7 +13,7 @@ local config = {
     healDelay = 5,           -- Tempo (em segundos) para verificar a saúde novamente
     attackInterval = 0.5,    -- Intervalo entre ataques
     retreatPoint = Vector3.new(0, 100, 0), -- Posição segura para recuar
-    heightOffset = 5         -- Altura acima do inimigo
+    heightOffset = 10        -- Altura acima do inimigo
 }
 
 -- Função utilitária para encontrar o inimigo mais próximo dentro do raio
@@ -50,7 +50,7 @@ local function monitorHealth()
     end
 end
 
--- Função para atacar um inimigo
+-- Função para atacar automaticamente um inimigo
 local function attackEnemy(enemy)
     local player = game.Players.LocalPlayer
     local character = player.Character or player.CharacterAdded:Wait()
@@ -60,8 +60,13 @@ local function attackEnemy(enemy)
         debug("Atacando inimigo: " .. enemy.Name)
 
         while enemy.Parent and enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 and isFarming do
+            -- Move o jogador para cima do inimigo
             local enemyPosition = enemy.HumanoidRootPart.Position
             rootPart.CFrame = CFrame.new(enemyPosition + Vector3.new(0, config.heightOffset, 0))
+
+            -- Simula um ataque automático (substituir pela lógica de ataque real do jogo, se necessário)
+            game:GetService("VirtualUser"):CaptureController()
+            game:GetService("VirtualUser"):Button1Down()
 
             wait(config.attackInterval)
         end
