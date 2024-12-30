@@ -1,22 +1,16 @@
--- Script de Auto-Farming com Interface GUI - Blox Fruits
--- Aviso: Use este script de forma responsável e respeite as regras do jogo.
-
--- Função para exibir mensagens de depuração de forma segura
 local function debug(message)
     print("[DEBUG] " .. message)
 end
 
--- Configurações principais
 local config = {
-    farmRadius = 100,         -- Raio para detectar e atacar inimigos (aumentado)
-    lowHealthThreshold = 30,  -- Percentual de vida para recuar
-    healDelay = 5,            -- Tempo (em segundos) para verificar a saúde novamente
-    attackInterval = 0.3,     -- Intervalo entre ataques (reduzido para maior velocidade)
-    retreatPoint = Vector3.new(0, 100, 0), -- Posição segura para recuar
-    heightOffset = 5          -- Distância acima do inimigo ao atacar
+    farmRadius = 50,
+    lowHealthThreshold = 30,
+    healDelay = 5,
+    attackInterval = 0.5,
+    retreatPoint = Vector3.new(0, 100, 0),
+    heightOffset = 5
 }
 
--- Função utilitária para encontrar o inimigo mais próximo dentro do raio
 local function getNearestEnemy()
     local player = game.Players.LocalPlayer
     local character = player.Character or player.CharacterAdded:Wait()
@@ -37,7 +31,6 @@ local function getNearestEnemy()
     return nearestEnemy
 end
 
--- Função para monitorar a saúde e recuar se necessário
 local function monitorHealth()
     local player = game.Players.LocalPlayer
     local character = player.Character or player.CharacterAdded:Wait()
@@ -50,7 +43,6 @@ local function monitorHealth()
     end
 end
 
--- Função para atacar um inimigo
 local function attackEnemy(enemy)
     local player = game.Players.LocalPlayer
     local character = player.Character or player.CharacterAdded:Wait()
@@ -58,14 +50,11 @@ local function attackEnemy(enemy)
 
     if enemy and enemy:FindFirstChild("Humanoid") and enemy:FindFirstChild("HumanoidRootPart") then
         debug("Atacando inimigo: " .. enemy.Name)
-        
-        -- Simula ataque básico
-        while enemy.Humanoid.Health > 0 and enemy.Parent and isFarming do
-            -- Posiciona o jogador acima do inimigo
+
+        while enemy.Parent and enemy.Humanoid.Health > 0 and isFarming do
             local enemyPosition = enemy.HumanoidRootPart.Position
             rootPart.CFrame = CFrame.new(enemyPosition + Vector3.new(0, config.heightOffset, 0))
-            
-            -- Verifica novamente para evitar crashes se o inimigo morrer
+
             if not enemy:FindFirstChild("Humanoid") or enemy.Humanoid.Health <= 0 then
                 debug("Inimigo derrotado!")
                 break
@@ -76,15 +65,14 @@ local function attackEnemy(enemy)
     end
 end
 
--- Função principal do Auto-Farming
 local function autoFarm()
     debug("Iniciando o Auto-Farming...")
     while isFarming do
         pcall(function()
-            monitorHealth() -- Verifica a saúde do personagem
-            local enemy = getNearestEnemy() -- Encontra o inimigo mais próximo
+            monitorHealth()
+            local enemy = getNearestEnemy()
             if enemy then
-                attackEnemy(enemy) -- Ataca o inimigo
+                attackEnemy(enemy)
             else
                 debug("Nenhum inimigo próximo encontrado.")
                 wait(1)
@@ -93,12 +81,10 @@ local function autoFarm()
     end
 end
 
--- Criação da interface gráfica (GUI)
 local screenGui = Instance.new("ScreenGui")
 screenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
 screenGui.Name = "KhanHub"
 
--- Criação do Frame principal
 local mainFrame = Instance.new("Frame")
 mainFrame.Size = UDim2.new(0, 300, 0, 150)
 mainFrame.Position = UDim2.new(0.5, -150, 0.5, -75)
@@ -108,7 +94,6 @@ mainFrame.Parent = screenGui
 mainFrame.Active = true
 mainFrame.Draggable = true
 
--- Adicionando título
 local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1, 0, 0.3, 0)
 title.Position = UDim2.new(0, 0, 0, 0)
@@ -120,7 +105,6 @@ title.Font = Enum.Font.SourceSansBold
 title.TextSize = 20
 title.Parent = mainFrame
 
--- Botão de Auto-Farm
 local autoFarmButton = Instance.new("TextButton")
 autoFarmButton.Size = UDim2.new(0.8, 0, 0.4, 0)
 autoFarmButton.Position = UDim2.new(0.1, 0, 0.35, 0)
@@ -132,7 +116,6 @@ autoFarmButton.Font = Enum.Font.SourceSansBold
 autoFarmButton.TextSize = 18
 autoFarmButton.Parent = mainFrame
 
--- Status abaixo do botão
 local statusLabel = Instance.new("TextLabel")
 statusLabel.Size = UDim2.new(1, 0, 0.2, 0)
 statusLabel.Position = UDim2.new(0, 0, 0.8, 0)
@@ -144,18 +127,16 @@ statusLabel.Font = Enum.Font.SourceSans
 statusLabel.TextSize = 16
 statusLabel.Parent = mainFrame
 
--- Variável para controle do Auto-Farm
 isFarming = false
 
--- Evento de clique no botão
 autoFarmButton.MouseButton1Click:Connect(function()
     isFarming = not isFarming
     if isFarming then
         statusLabel.Text = "Status: Ativado"
         autoFarmButton.Text = "Desativar Auto-Farm"
-        spawn(autoFarm) -- Executa o farming em uma thread separada
+        spawn(autoFarm)
     else
         statusLabel.Text = "Status: Desativado"
         autoFarmButton.Text = "Ativar Auto-Farm"
     end
-end
+end)
