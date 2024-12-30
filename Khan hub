@@ -16,6 +16,9 @@ local config = {
     heightOffset = 10        -- Altura acima do inimigo
 }
 
+-- Variável global para controle do Auto-Farming
+isFarming = false
+
 -- Função utilitária para encontrar o inimigo mais próximo dentro do raio
 local function getNearestEnemy()
     local player = game.Players.LocalPlayer
@@ -37,7 +40,20 @@ local function getNearestEnemy()
     return nearestEnemy
 end
 
--- Função para atacar um único inimigo
+-- Função para monitorar a saúde e recuar se necessário
+local function monitorHealth()
+    local player = game.Players.LocalPlayer
+    local character = player.Character or player.CharacterAdded:Wait()
+    local humanoid = character:FindFirstChild("Humanoid")
+
+    if humanoid and humanoid.Health / humanoid.MaxHealth * 100 < config.lowHealthThreshold then
+        debug("Vida baixa, recuando...")
+        character.HumanoidRootPart.CFrame = CFrame.new(config.retreatPoint)
+        wait(config.healDelay)
+    end
+end
+
+-- Função para atacar o inimigo enquanto voa acima dele
 local function attackEnemy(enemy)
     local player = game.Players.LocalPlayer
     local character = player.Character or player.CharacterAdded:Wait()
@@ -47,13 +63,18 @@ local function attackEnemy(enemy)
         debug("Atacando inimigo: " .. enemy.Name)
 
         while enemy.Parent and enemy.Humanoid.Health > 0 and isFarming do
-            -- Move o jogador para cima do inimigo
+            -- Move o jogador para voar acima do inimigo
             local enemyPosition = enemy.HumanoidRootPart.Position
             rootPart.CFrame = CFrame.new(enemyPosition + Vector3.new(0, config.heightOffset, 0))
 
             -- Simula um ataque automático
             game:GetService("VirtualUser"):CaptureController()
             game:GetService("VirtualUser"):Button1Down()
+
+            -- Verifica se o inimigo ainda existe
+            if not enemy.Parent or enemy.Humanoid.Health <= 0 then
+                break
+            end
 
             wait(config.attackInterval)
         end
@@ -69,6 +90,7 @@ local function autoFarm()
     debug("Iniciando o Auto-Farming...")
     while isFarming do
         pcall(function()
+            monitorHealth() -- Verifica a saúde do personagem
             local enemy = getNearestEnemy() -- Encontra o inimigo mais próximo
             if enemy then
                 attackEnemy(enemy) -- Ataca o inimigo
@@ -130,9 +152,6 @@ statusLabel.BorderSizePixel = 0
 statusLabel.Font = Enum.Font.SourceSans
 statusLabel.TextSize = 16
 statusLabel.Parent = mainFrame
-
--- Variável para controle do Auto-Farm
-isFarming = false
 
 -- Evento de clique no botão
 autoFarmButton.MouseButton1Click:Connect(function()
