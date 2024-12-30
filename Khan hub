@@ -11,7 +11,7 @@ local config = {
     farmRadius = 50,         -- Raio para detectar e atacar inimigos
     lowHealthThreshold = 30, -- Percentual de vida para recuar
     healDelay = 5,           -- Tempo (em segundos) para verificar a saúde novamente
-    attackInterval = 0.5,    -- Intervalo entre ataques
+    attackInterval = 0.3,    -- Intervalo entre ataques
     retreatPoint = Vector3.new(0, 100, 0), -- Posição segura para recuar
     heightOffset = 10        -- Altura acima do inimigo
 }
@@ -37,20 +37,7 @@ local function getNearestEnemy()
     return nearestEnemy
 end
 
--- Função para monitorar a saúde e recuar se necessário
-local function monitorHealth()
-    local player = game.Players.LocalPlayer
-    local character = player.Character or player.CharacterAdded:Wait()
-    local humanoid = character:FindFirstChild("Humanoid")
-
-    if humanoid and humanoid.Health / humanoid.MaxHealth * 100 < config.lowHealthThreshold then
-        debug("Vida baixa, recuando...")
-        character.HumanoidRootPart.CFrame = CFrame.new(config.retreatPoint)
-        wait(config.healDelay)
-    end
-end
-
--- Função para atacar automaticamente um inimigo
+-- Função para atacar um único inimigo
 local function attackEnemy(enemy)
     local player = game.Players.LocalPlayer
     local character = player.Character or player.CharacterAdded:Wait()
@@ -59,12 +46,12 @@ local function attackEnemy(enemy)
     if enemy and enemy:FindFirstChild("Humanoid") and enemy:FindFirstChild("HumanoidRootPart") then
         debug("Atacando inimigo: " .. enemy.Name)
 
-        while enemy.Parent and enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 and isFarming do
+        while enemy.Parent and enemy.Humanoid.Health > 0 and isFarming do
             -- Move o jogador para cima do inimigo
             local enemyPosition = enemy.HumanoidRootPart.Position
             rootPart.CFrame = CFrame.new(enemyPosition + Vector3.new(0, config.heightOffset, 0))
 
-            -- Simula um ataque automático (substituir pela lógica de ataque real do jogo, se necessário)
+            -- Simula um ataque automático
             game:GetService("VirtualUser"):CaptureController()
             game:GetService("VirtualUser"):Button1Down()
 
@@ -82,7 +69,6 @@ local function autoFarm()
     debug("Iniciando o Auto-Farming...")
     while isFarming do
         pcall(function()
-            monitorHealth() -- Verifica a saúde do personagem
             local enemy = getNearestEnemy() -- Encontra o inimigo mais próximo
             if enemy then
                 attackEnemy(enemy) -- Ataca o inimigo
