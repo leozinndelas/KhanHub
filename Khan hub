@@ -3,10 +3,9 @@ local ScreenGui = Instance.new("ScreenGui")
 local Frame = Instance.new("Frame")
 local AutoFarmButton = Instance.new("TextButton")
 local FruitCollectorButton = Instance.new("TextButton")
-local Signature = Instance.new("TextLabel")
 
 ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
-ScreenGui.Name = "ScriptUI"
+ScreenGui.Name = "KhanHub-by leozin"
 
 Frame.Parent = ScreenGui
 Frame.BackgroundColor3 = Color3.new(0, 0, 0)
@@ -28,22 +27,12 @@ FruitCollectorButton.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
 FruitCollectorButton.TextColor3 = Color3.new(1, 1, 1)
 FruitCollectorButton.Text = "Toggle Fruit Collector"
 
-Signature.Parent = Frame
-Signature.Size = UDim2.new(0, 180, 0, 20)
-Signature.Position = UDim2.new(0, 10, 0, 110)
-Signature.BackgroundTransparency = 1
-Signature.TextColor3 = Color3.new(1, 1, 1)
-Signature.Text = "KhanHub-by leozin"
-Signature.TextScaled = true
-
 -- Configuração das Funções
 local autoFarmActive = false
 local fruitCollectorActive = false
 
 local function toggleAutoFarm()
     autoFarmActive = not autoFarmActive
-    AutoFarmButton.BackgroundColor3 = autoFarmActive and Color3.new(0, 1, 0) or Color3.new(1, 0, 0)
-    AutoFarmButton.Text = autoFarmActive and "Auto-Farm: ON" or "Auto-Farm: OFF"
     if autoFarmActive then
         print("Auto-Farm ativado")
         spawn(autoFarm)
@@ -54,8 +43,6 @@ end
 
 local function toggleFruitCollector()
     fruitCollectorActive = not fruitCollectorActive
-    FruitCollectorButton.BackgroundColor3 = fruitCollectorActive and Color3.new(0, 1, 0) or Color3.new(1, 0, 0)
-    FruitCollectorButton.Text = fruitCollectorActive and "Fruit Collector: ON" or "Fruit Collector: OFF"
     if fruitCollectorActive then
         print("Fruit Collector ativado")
         spawn(fruitCollector)
@@ -68,32 +55,58 @@ end
 AutoFarmButton.MouseButton1Click:Connect(toggleAutoFarm)
 FruitCollectorButton.MouseButton1Click:Connect(toggleFruitCollector)
 
--- Funções de Automação
+-- Função Auto-Farm
 local function autoFarm()
     while autoFarmActive do
         local player = game.Players.LocalPlayer
-        local playerLevel = player.Data.Level.Value -- Verifica o nível do jogador
-        local questGiver, questLocation, mobLocation = getQuestAndMobForLevel(playerLevel)
+        local character = player.Character or player.CharacterAdded:Wait()
+        local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+        local playerLevel = player.Data.Level.Value
 
-        -- Pega a Quest
+        -- Identifica o NPC e os mobs recomendados
+        local questGiver, questLocation, mobLocation = getQuestAndMobForLevel(playerLevel)
+        
+        if not questGiver or not questLocation or not mobLocation then
+            print("Nenhuma missão disponível para o nível atual.")
+            break
+        end
+
+        -- Teleporta para pegar a missão
         teleportTo(questLocation)
         wait(2)
-        fireclickdetector(questGiver:FindFirstChild("ClickDetector"))
+        local questDetector = questGiver:FindFirstChild("ClickDetector")
+        if questDetector then
+            fireclickdetector(questDetector)
+            print("Missão aceita.")
+        else
+            print("Falha ao pegar a missão.")
+            break
+        end
 
-        -- Ataca os mobs do nível
+        -- Teleporta até os mobs e ataca
         teleportTo(mobLocation)
         wait(2)
         local mobs = getMobsNearby(mobLocation)
+        
+        if #mobs == 0 then
+            print("Nenhum mob disponível na área.")
+            break
+        end
+
         for _, mob in pairs(mobs) do
             while mob.Humanoid.Health > 0 and autoFarmActive do
+                -- Fica em cima do mob e ataca
+                humanoidRootPart.CFrame = mob.HumanoidRootPart.CFrame + Vector3.new(0, 5, 0)
                 attackMob(mob)
                 wait(0.5)
             end
         end
-        wait(5)
+
+        wait(5) -- Pequena pausa antes de repetir o ciclo
     end
 end
 
+-- Função Fruit Collector
 local function fruitCollector()
     while fruitCollectorActive do
         local fruits = detectFruits()
@@ -114,8 +127,10 @@ end
 local function detectFruits()
     local fruits = {}
     for _, item in pairs(game.Workspace:GetChildren()) do
-        if item:IsA("Tool") and item:FindFirstChild("Handle") and item.Name:lower():find("fruit") then
-            table.insert(fruits, item)
+        if item:IsA("Tool") and item:FindFirstChild("Handle") then
+            if item.Name:lower():find("fruit") then
+                table.insert(fruits, item)
+            end
         end
     end
     return fruits
@@ -123,21 +138,22 @@ end
 
 local function collectFruit(fruit)
     if fruit and fruit:FindFirstChild("Handle") then
-        pcall(function()
-            teleportTo(fruit.Handle.Position)
-            wait(math.random(1, 2)) -- Simula um atraso realista
-            fireclickdetector(fruit.Handle:FindFirstChild("ClickDetector"))
-        end)
+        teleportTo(fruit.Handle.Position)
+        wait(1)
+        fireclickdetector(fruit.Handle:FindFirstChild("ClickDetector"))
     end
 end
 
 local function getQuestAndMobForLevel(playerLevel)
+    -- Substitua com os dados reais do jogo
     if playerLevel < 50 then
         return game.Workspace.QuestGiver1, Vector3.new(100, 10, 200), Vector3.new(120, 10, 220)
     elseif playerLevel < 100 then
         return game.Workspace.QuestGiver2, Vector3.new(300, 10, 400), Vector3.new(320, 10, 420)
-    else
+    elseif playerLevel < 200 then
         return game.Workspace.QuestGiver3, Vector3.new(500, 10, 600), Vector3.new(520, 10, 620)
+    else
+        return game.Workspace.QuestGiver4, Vector3.new(700, 10, 800), Vector3.new(720, 10, 820)
     end
 end
 
@@ -157,9 +173,9 @@ end
 local function attackMob(mob)
     local character = game.Players.LocalPlayer.Character
     if character and character:FindFirstChild("HumanoidRootPart") and mob:FindFirstChild("HumanoidRootPart") then
-        character.HumanoidRootPart.CFrame = mob.HumanoidRootPart.CFrame
+        character.HumanoidRootPart.CFrame = mob.HumanoidRootPart.CFrame + Vector3.new(0, 5, 0)
         wait(0.2)
-        -- Simula o ataque (modifique conforme necessário para a lógica de ataque)
+        -- Simula o ataque (modifique conforme necessário para a lógica de ataque do jogo)
         fireclickdetector(mob:FindFirstChild("ClickDetector"))
     end
 end
