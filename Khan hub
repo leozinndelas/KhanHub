@@ -2,14 +2,13 @@
 local ScreenGui = Instance.new("ScreenGui")
 local Frame = Instance.new("Frame")
 local AutoFarmButton = Instance.new("TextButton")
-local FruitCollectorButton = Instance.new("TextButton")
 
 ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
 ScreenGui.Name = "KhanHub-by leozin"
 
 Frame.Parent = ScreenGui
 Frame.BackgroundColor3 = Color3.new(0, 0, 0)
-Frame.Size = UDim2.new(0, 200, 0, 150)
+Frame.Size = UDim2.new(0, 200, 0, 100)
 Frame.Position = UDim2.new(0.1, 0, 0.1, 0)
 Frame.BorderSizePixel = 0
 
@@ -20,16 +19,8 @@ AutoFarmButton.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
 AutoFarmButton.TextColor3 = Color3.new(1, 1, 1)
 AutoFarmButton.Text = "Toggle Auto-Farm"
 
-FruitCollectorButton.Parent = Frame
-FruitCollectorButton.Size = UDim2.new(0, 180, 0, 40)
-FruitCollectorButton.Position = UDim2.new(0, 10, 0, 60)
-FruitCollectorButton.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
-FruitCollectorButton.TextColor3 = Color3.new(1, 1, 1)
-FruitCollectorButton.Text = "Toggle Fruit Collector"
-
 -- Configuração das Funções
 local autoFarmActive = false
-local fruitCollectorActive = false
 
 local function toggleAutoFarm()
     autoFarmActive = not autoFarmActive
@@ -41,21 +32,9 @@ local function toggleAutoFarm()
     end
 end
 
-local function toggleFruitCollector()
-    fruitCollectorActive = not fruitCollectorActive
-    if fruitCollectorActive then
-        print("Fruit Collector ativado")
-        spawn(fruitCollector)
-    else
-        print("Fruit Collector desativado")
-    end
-end
-
--- Conexão dos Botões
 AutoFarmButton.MouseButton1Click:Connect(toggleAutoFarm)
-FruitCollectorButton.MouseButton1Click:Connect(toggleFruitCollector)
 
--- Função Auto-Farm
+-- Função Principal de Auto-Farm
 local function autoFarm()
     while autoFarmActive do
         local player = game.Players.LocalPlayer
@@ -63,97 +42,61 @@ local function autoFarm()
         local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
         local playerLevel = player.Data.Level.Value
 
-        -- Identifica o NPC e os mobs recomendados
+        -- Identifica o NPC de Quest e Mobs
         local questGiver, questLocation, mobLocation = getQuestAndMobForLevel(playerLevel)
-        
         if not questGiver or not questLocation or not mobLocation then
             print("Nenhuma missão disponível para o nível atual.")
             break
         end
 
-        -- Teleporta para pegar a missão
+        -- Aceita a Quest
         teleportTo(questLocation)
-        wait(2)
-        local questDetector = questGiver:FindFirstChild("ClickDetector")
-        if questDetector then
-            fireclickdetector(questDetector)
+        wait(1)
+        local clickDetector = questGiver:FindFirstChild("ClickDetector")
+        if clickDetector then
+            fireclickdetector(clickDetector)
             print("Missão aceita.")
         else
             print("Falha ao pegar a missão.")
             break
         end
 
-        -- Teleporta até os mobs e ataca
+        -- Ataca os Mobs
         teleportTo(mobLocation)
-        wait(2)
+        wait(1)
         local mobs = getMobsNearby(mobLocation)
-        
-        if #mobs == 0 then
-            print("Nenhum mob disponível na área.")
-            break
-        end
-
-        for _, mob in pairs(mobs) do
-            while mob.Humanoid.Health > 0 and autoFarmActive do
-                -- Fica em cima do mob e ataca
-                humanoidRootPart.CFrame = mob.HumanoidRootPart.CFrame + Vector3.new(0, 5, 0)
-                attackMob(mob)
-                wait(0.5)
+        if #mobs > 0 then
+            for _, mob in pairs(mobs) do
+                while mob.Humanoid.Health > 0 and autoFarmActive do
+                    humanoidRootPart.CFrame = mob.HumanoidRootPart.CFrame + Vector3.new(0, 5, 0)
+                    attackMob(mob)
+                    wait(0.5)
+                end
             end
+        else
+            print("Nenhum mob disponível.")
         end
 
-        wait(5) -- Pequena pausa antes de repetir o ciclo
-    end
-end
-
--- Função Fruit Collector
-local function fruitCollector()
-    while fruitCollectorActive do
-        local fruits = detectFruits()
-        for _, fruit in pairs(fruits) do
-            collectFruit(fruit)
-        end
-        wait(5)
+        wait(5) -- Pausa antes de repetir
     end
 end
 
 -- Funções Auxiliares
-local function teleportTo(location)
-    if game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-        game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(location)
+local function teleportTo(position)
+    local character = game.Players.LocalPlayer.Character
+    if character and character:FindFirstChild("HumanoidRootPart") then
+        character.HumanoidRootPart.CFrame = CFrame.new(position)
     end
 end
 
-local function detectFruits()
-    local fruits = {}
-    for _, item in pairs(game.Workspace:GetChildren()) do
-        if item:IsA("Tool") and item:FindFirstChild("Handle") then
-            if item.Name:lower():find("fruit") then
-                table.insert(fruits, item)
-            end
-        end
-    end
-    return fruits
-end
-
-local function collectFruit(fruit)
-    if fruit and fruit:FindFirstChild("Handle") then
-        teleportTo(fruit.Handle.Position)
-        wait(1)
-        fireclickdetector(fruit.Handle:FindFirstChild("ClickDetector"))
-    end
-end
-
-local function getQuestAndMobForLevel(playerLevel)
-    -- Substitua com os dados reais do jogo
-    if playerLevel < 50 then
-        return game.Workspace.QuestGiver1, Vector3.new(100, 10, 200), Vector3.new(120, 10, 220)
-    elseif playerLevel < 100 then
-        return game.Workspace.QuestGiver2, Vector3.new(300, 10, 400), Vector3.new(320, 10, 420)
-    elseif playerLevel < 200 then
-        return game.Workspace.QuestGiver3, Vector3.new(500, 10, 600), Vector3.new(520, 10, 620)
+local function getQuestAndMobForLevel(level)
+    -- Configuração do sistema de nível e localização
+    if level < 50 then
+        return game.Workspace:FindFirstChild("QuestGiver1"), Vector3.new(100, 10, 200), Vector3.new(120, 10, 220)
+    elseif level < 100 then
+        return game.Workspace:FindFirstChild("QuestGiver2"), Vector3.new(300, 10, 400), Vector3.new(320, 10, 420)
     else
-        return game.Workspace.QuestGiver4, Vector3.new(700, 10, 800), Vector3.new(720, 10, 820)
+        return game.Workspace:FindFirstChild("QuestGiver3"), Vector3.new(500, 10, 600), Vector3.new(520, 10, 620)
     end
 end
 
@@ -174,8 +117,7 @@ local function attackMob(mob)
     local character = game.Players.LocalPlayer.Character
     if character and character:FindFirstChild("HumanoidRootPart") and mob:FindFirstChild("HumanoidRootPart") then
         character.HumanoidRootPart.CFrame = mob.HumanoidRootPart.CFrame + Vector3.new(0, 5, 0)
-        wait(0.2)
-        -- Simula o ataque (modifique conforme necessário para a lógica de ataque do jogo)
+        wait(0.1)
         fireclickdetector(mob:FindFirstChild("ClickDetector"))
     end
 end
