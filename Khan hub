@@ -42,12 +42,16 @@ local function autoFarm()
         local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
         local playerLevel = player.Data.Level.Value
 
+        print("Nível do jogador:", playerLevel)
+
         -- Identifica o NPC de Quest e Mobs
         local questGiver, questLocation, mobLocation = getQuestAndMobForLevel(playerLevel)
         if not questGiver or not questLocation or not mobLocation then
             warn("Nenhuma missão disponível para o nível atual.")
             break
         end
+
+        print("Encontrado NPC da missão:", questGiver.Name)
 
         -- Aceita a Quest
         teleportTo(questLocation)
@@ -67,6 +71,7 @@ local function autoFarm()
         local mobs = getMobsNearby(mobLocation)
         if #mobs > 0 then
             for _, mob in pairs(mobs) do
+                print("Atacando mob:", mob.Name)
                 while mob.Humanoid.Health > 0 and autoFarmActive do
                     humanoidRootPart.CFrame = mob.HumanoidRootPart.CFrame + Vector3.new(0, 5, 0)
                     attackMob(mob)
@@ -112,6 +117,7 @@ local function getMobsNearby(location)
             end
         end
     end
+    print("Mobs detectados:", #mobs)
     return mobs
 end
 
@@ -120,6 +126,7 @@ local function attackMob(mob)
     if character and character:FindFirstChild("HumanoidRootPart") and mob:FindFirstChild("HumanoidRootPart") then
         character.HumanoidRootPart.CFrame = mob.HumanoidRootPart.CFrame + Vector3.new(0, 5, 0)
         wait(0.1)
+        print("Atacando:", mob.Name)
         -- Modifique esta função conforme a mecânica do jogo
     else
         warn("Não foi possível atacar o mob. Verifique os parâmetros.")
