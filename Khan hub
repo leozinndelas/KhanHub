@@ -59,15 +59,22 @@ FruitCollectorButton.MouseButton1Click:Connect(toggleFruitCollector)
 local function autoFarm()
     while autoFarmActive do
         local player = game.Players.LocalPlayer
-        local playerLevel = player.Level or 1
-        local questName, questLocation = getQuestForLevel(playerLevel)
+        local playerLevel = player.Data.Level.Value -- Verifica o nível do jogador
+        local questGiver, questLocation, mobLocation = getQuestAndMobForLevel(playerLevel)
+        
+        -- Pega a Quest
         teleportTo(questLocation)
         wait(2)
-        local enemies = {}
-        for _, enemy in pairs(enemies) do
-            while enemy.Humanoid.Health > 0 do
-                enemy.Humanoid:TakeDamage(10)
-                wait(1)
+        fireclickdetector(questGiver:FindFirstChild("ClickDetector"))
+        
+        -- Ataca os mobs do nível
+        teleportTo(mobLocation)
+        wait(2)
+        local mobs = getMobsNearby(mobLocation)
+        for _, mob in pairs(mobs) do
+            while mob.Humanoid.Health > 0 and autoFarmActive do
+                attackMob(mob)
+                wait(0.5)
             end
         end
         wait(5)
@@ -111,12 +118,42 @@ local function collectFruit(fruit)
     end
 end
 
-local function getQuestForLevel(playerLevel)
+local function getQuestAndMobForLevel(playerLevel)
     if playerLevel < 50 then
-        return "Bandits", Vector3.new(100, 10, 200)
+        return game.Workspace.QuestGiver1, Vector3.new(100, 10, 200), Vector3.new(120, 10, 220)
     elseif playerLevel < 100 then
-        return "Pirates", Vector3.new(300, 10, 400)
+        return game.Workspace.QuestGiver2, Vector3.new(300, 10, 400), Vector3.new(320, 10, 420)
     else
-        return "Boss", Vector3.new(500, 10, 600)
+        return game.Workspace.QuestGiver3, Vector3.new(500, 10, 600), Vector3.new(520, 10, 620)
     end
+end
+
+local function getMobsNearby(location)
+    local mobs = {}
+    for _, mob in pairs(game.Workspace:GetChildren()) do
+        if mob:IsA("Model") and mob:FindFirstChild("Humanoid") and mob.Humanoid.Health > 0 then
+            local mobPosition = mob:FindFirstChild("HumanoidRootPart") and mob.HumanoidRootPart.Position
+            if mobPosition and (mobPosition - location).Magnitude < 50 then
+                table.insert(mobs, mob)
+            end
+        end
+    end
+    return mobs
+end
+
+local function attackMob(mob)
+    local character = game.Players.LocalPlayer.Character
+    if character and character:FindFirstChild("HumanoidRootPart") and mob:FindFirstChild("HumanoidRootPart") then
+        character.HumanoidRootPart.CFrame = mob.HumanoidRootPart.CFrame
+        wait(0.2)
+        -- Simula o ataque (modifique conforme necessário para a lógica de ataque)
+        fireclickdetector(mob:FindFirstChild("ClickDetector"))
+    end
+end
+
+if config.autoFarmEnabled then
+    spawn(autoFarm)
+end
+if config.fruitCollectionEnabled then
+    spawn(fruitCollector)
 end
