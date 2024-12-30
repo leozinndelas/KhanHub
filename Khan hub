@@ -38,9 +38,23 @@ AutoFarmButton.MouseButton1Click:Connect(toggleAutoFarm)
 local function autoFarm()
     while autoFarmActive do
         local player = game.Players.LocalPlayer
+        if not player then
+            warn("Jogador não encontrado.")
+            break
+        end
+
         local character = player.Character or player.CharacterAdded:Wait()
         local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
-        local playerLevel = player.Data.Level.Value
+        if not humanoidRootPart then
+            warn("HumanoidRootPart não encontrado.")
+            break
+        end
+
+        local playerLevel = player:FindFirstChild("Data") and player.Data:FindFirstChild("Level") and player.Data.Level.Value
+        if not playerLevel then
+            warn("Nível do jogador não encontrado.")
+            break
+        end
 
         print("Nível do jogador:", playerLevel)
 
@@ -72,7 +86,7 @@ local function autoFarm()
         if #mobs > 0 then
             for _, mob in pairs(mobs) do
                 print("Atacando mob:", mob.Name)
-                while mob.Humanoid.Health > 0 and autoFarmActive do
+                while mob:FindFirstChild("Humanoid") and mob.Humanoid.Health > 0 and autoFarmActive do
                     humanoidRootPart.CFrame = mob.HumanoidRootPart.CFrame + Vector3.new(0, 5, 0)
                     attackMob(mob)
                     wait(0.5)
