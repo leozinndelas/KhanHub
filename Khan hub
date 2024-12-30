@@ -8,11 +8,12 @@ end
 
 -- Configurações principais
 local config = {
-    farmRadius = 50,         -- Raio para detectar e atacar inimigos
-    lowHealthThreshold = 30, -- Percentual de vida para recuar
-    healDelay = 5,           -- Tempo (em segundos) para verificar a saúde novamente
-    attackInterval = 0.5,    -- Intervalo entre ataques
+    farmRadius = 100,         -- Raio para detectar e atacar inimigos (aumentado)
+    lowHealthThreshold = 30,  -- Percentual de vida para recuar
+    healDelay = 5,            -- Tempo (em segundos) para verificar a saúde novamente
+    attackInterval = 0.3,     -- Intervalo entre ataques (reduzido para maior velocidade)
     retreatPoint = Vector3.new(0, 100, 0), -- Posição segura para recuar
+    heightOffset = 5          -- Distância acima do inimigo ao atacar
 }
 
 -- Função utilitária para encontrar o inimigo mais próximo dentro do raio
@@ -53,12 +54,23 @@ end
 local function attackEnemy(enemy)
     local player = game.Players.LocalPlayer
     local character = player.Character or player.CharacterAdded:Wait()
+    local rootPart = character:FindFirstChild("HumanoidRootPart")
 
-    if enemy and enemy:FindFirstChild("Humanoid") then
+    if enemy and enemy:FindFirstChild("Humanoid") and enemy:FindFirstChild("HumanoidRootPart") then
         debug("Atacando inimigo: " .. enemy.Name)
+        
         -- Simula ataque básico
         while enemy.Humanoid.Health > 0 and enemy.Parent and isFarming do
-            character.HumanoidRootPart.CFrame = CFrame.new(enemy.HumanoidRootPart.Position)
+            -- Posiciona o jogador acima do inimigo
+            local enemyPosition = enemy.HumanoidRootPart.Position
+            rootPart.CFrame = CFrame.new(enemyPosition + Vector3.new(0, config.heightOffset, 0))
+            
+            -- Verifica novamente para evitar crashes se o inimigo morrer
+            if not enemy:FindFirstChild("Humanoid") or enemy.Humanoid.Health <= 0 then
+                debug("Inimigo derrotado!")
+                break
+            end
+
             wait(config.attackInterval)
         end
     end
@@ -146,4 +158,4 @@ autoFarmButton.MouseButton1Click:Connect(function()
         statusLabel.Text = "Status: Desativado"
         autoFarmButton.Text = "Ativar Auto-Farm"
     end
-end)
+end
